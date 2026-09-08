@@ -1,4 +1,5 @@
 import pandas as pd
+from quality.data_quality import validate_data
 
 from etls.reddit_etl import (
     connect_reddit,
@@ -42,6 +43,7 @@ def reddit_pipeline(
 
     post_df = pd.DataFrame(posts)
     post_df = transform_data(post_df)
+    validate_data(post_df)
     load_data_to_csv(post_df, file_path)
 
     return file_path
