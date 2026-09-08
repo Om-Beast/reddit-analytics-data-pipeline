@@ -1,37 +1,36 @@
-import configparser
 import os
 
-parser = configparser.ConfigParser()
-parser.read(os.path.join(os.path.dirname(__file__), '../config/config.conf'))
+from dotenv import load_dotenv
 
-SECRET = parser.get('api_keys', 'reddit_secret_key')
-CLIENT_ID = parser.get('api_keys', 'reddit_client_id')
+load_dotenv()
 
-DATABASE_HOST =  parser.get('database', 'database_host')
-DATABASE_NAME =  parser.get('database', 'database_name')
-DATABASE_PORT =  parser.get('database', 'database_port')
-DATABASE_USER =  parser.get('database', 'database_username')
-DATABASE_PASSWORD =  parser.get('database', 'database_password')
+# Reddit
+REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
+REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
+REDDIT_USER_AGENT = os.getenv(
+    "REDDIT_USER_AGENT",
+    "reddit-analytics-pipeline/1.0",
+)
 
-#AWS
-AWS_ACCESS_KEY_ID = parser.get('aws', 'aws_access_key_id')
-AWS_ACCESS_KEY = parser.get('aws', 'aws_secret_access_key')
-AWS_REGION = parser.get('aws', 'aws_region')
-AWS_BUCKET_NAME = parser.get('aws', 'aws_bucket_name')
+# AWS
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-INPUT_PATH = parser.get('file_paths', 'input_path')
-OUTPUT_PATH = parser.get('file_paths', 'output_path')
+# Pipeline
+SUBREDDIT = os.getenv("SUBREDDIT", "dataengineering")
+POST_LIMIT = int(os.getenv("POST_LIMIT", "100"))
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 POST_FIELDS = (
-    'id',
-    'title',
-    'score',
-    'num_comments',
-    'author',
-    'created_utc',
-    'url',
-    'over_18',
-    'edited',
-    'spoiler',
-    'stickied'
+    "id",
+    "title",
+    "score",
+    "num_comments",
+    "author",
+    "created_utc",
+    "url",
+    "over_18",
+    "edited",
+    "spoiler",
+    "stickied",
 )

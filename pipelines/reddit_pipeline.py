@@ -1,19 +1,47 @@
 import pandas as pd
 
-from etls.reddit_etl import connect_reddit, extract_posts, transform_data, load_data_to_csv
-from utils.constants import CLIENT_ID, SECRET, OUTPUT_PATH
+from etls.reddit_etl import (
+    connect_reddit,
+    extract_posts,
+    load_data_to_csv,
+    transform_data,
+)
+from utils.constants import (
+    POST_LIMIT,
+    REDDIT_CLIENT_ID,
+    REDDIT_CLIENT_SECRET,
+    REDDIT_USER_AGENT,
+    SUBREDDIT,
+)
 
 
-def reddit_pipeline(file_name: str, subreddit: str, time_filter='day', limit=None):
-    # connecting to reddit instance
-    instance = connect_reddit(CLIENT_ID, SECRET, 'Airscholar Agent')
-    # extraction
-    posts = extract_posts(instance, subreddit, time_filter, limit)
+def reddit_pipeline(
+    file_path: str,
+    subreddit: str = SUBREDDIT,
+    time_filter: str = "day",
+    limit: int = POST_LIMIT,
+) -> str:
+    if not REDDIT_CLIENT_ID or not REDDIT_CLIENT_SECRET:
+        raise ValueError(
+            "Reddit API credentials are missing. "
+            "Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
+        )
+
+    reddit = connect_reddit(
+        REDDIT_CLIENT_ID,
+        REDDIT_CLIENT_SECRET,
+        REDDIT_USER_AGENT,
+    )
+
+    posts = extract_posts(
+        reddit,
+        subreddit,
+        time_filter,
+        limit,
+    )
+
     post_df = pd.DataFrame(posts)
-    # transformation
     post_df = transform_data(post_df)
-    # loading to csv
-    file_path = f'{OUTPUT_PATH}/{file_name}.csv'
     load_data_to_csv(post_df, file_path)
 
     return file_path

@@ -1,5 +1,36 @@
-venv
-*.conf
-logs
-.idea
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Local configuration
+config/config.conf
+*.pem
+*.key
+
+# Airflow
+airflow/logs/
+airflow/airflow.db
+airflow/.env
+
+# Data generated locally
+data/input/*
+data/output/*
+!data/input/.gitkeep
+!data/output/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

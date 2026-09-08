@@ -1,48 +1,77 @@
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(
+    0,
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+)
 
 from pipelines.aws_s3_pipeline import upload_s3_pipeline
 from pipelines.reddit_pipeline import reddit_pipeline
+from utils.constants import POST_LIMIT, SUBREDDIT
+
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "output")
+
 
 default_args = {
-    'owner': 'Yusuf Ganiyu',
-    'start_date': datetime(2023, 10, 22)
+    "owner": "reddit-analytics-pipeline",
+    "depends_on_past": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
 }
 
-file_postfix = datetime.now().strftime("%Y%m%d")
 
-dag = DAG(
-    dag_id='etl_reddit_pipeline',
+with DAG(
+    dag_id="reddit_analytics_pipeline",
     default_args=default_args,
-    schedule_interval='@daily',
+    start_date=datetime(2026, 1, 1),
+    schedule="@daily",
     catchup=False,
-    tags=['reddit', 'etl', 'pipeline']
-)
+    tags=["reddit", "etl", "aws", "data-engineering"],
+    max_active_runs=1,
+) as dag:
 
-# extraction from reddit
-extract = PythonOperator(
-    task_id='reddit_extraction',
-    python_callable=reddit_pipeline,
-    op_kwargs={
-        'file_name': f'reddit_{file_postfix}',
-        'subreddit': 'dataengineering',
-        'time_filter': 'day',
-        'limit': 100
-    },
-    dag=dag
-)
+    file_name = (
+        f"reddit_{datetime.now().strftime('%Y%m%d')}.csv"
+    )
 
-# upload to s3
-upload_s3 = PythonOperator(
-    task_id='s3_upload',
-    python_callable=upload_s3_pipeline,
-    dag=dag
-)
+    file_path = os.path.join(
+        OUTPUT_DIR,
+        file_name,
+    )
 
-extract >> upload_s3
+    object_key = (
+        f"raw/reddit/"
+        f"year={datetime.now().year}/"
+        f"month={datetime.now().month:02d}/"
+        f"day={datetime.now().day:02d}/"
+        f"{file_name}"
+    )
+
+    extract_reddit = PythonOperator(
+        task_id="extract_and_transform_reddit",
+        python_callable=reddit_pipeline,
+        op_kwargs={
+            "file_path": file_path,
+            "subreddit": SUBREDDIT,
+            "time_filter": "day",
+            "limit": POST_LIMIT,
+        },
+    )
+
+    upload_to_s3 = PythonOperator(
+        task_id="upload_to_s3",
+        python_callable=upload_s3_pipeline,
+        op_kwargs={
+            "file_path": file_path,
+            "object_key": object_key,
+        },
+    )
+
+    extract_reddit >> upload_to_s3
