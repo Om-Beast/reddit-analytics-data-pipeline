@@ -149,3 +149,5 @@ yarl==1.9.2
 zipp==3.17.0
 python-dotenv
 boto3
+pytest==8.4.2
+pytest==8.4.2
